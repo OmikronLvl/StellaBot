@@ -16,6 +16,14 @@ try {
   process.exit();
 }
 
+var Permissions = {};
+try{
+	Permissions = require("./permissions.json");
+} catch(e){
+	Permissions.global = {};
+	Permissions.users = {};
+}
+
 bot.on('ready', () => {
   console.log(bot.user.username+" is ready!");
   load_plugins();
@@ -23,6 +31,11 @@ bot.on('ready', () => {
     bot.guilds.get(config.guildid).defaultChannel.sendMessage("*Hello everyone! "+bot.user.username+" is now online!*")
     .then((message => message.delete(5000)));
   };
+});
+
+bot.on("disconnected", function () {
+	console.log("Disconnected!");
+	process.exit(1); //exit node.js with an error
 });
 
 var messagebox;
@@ -42,6 +55,15 @@ try{
 } catch(e) {
 	//No aliases defined
 	aliases = {};
+}
+
+function startsWithInArray(string,array){
+  for (var i=0; i<array.length; i++){
+    if (string.toLowerCase().startsWith(array[i].toLowerCase())){
+      return array[i];
+    }
+  }
+  return false;
 }
 
 var commands = {
@@ -80,22 +102,22 @@ var commands = {
 function checkMessage(msg, isEdit) {
 	//check if message is a command
   if(config.botMentionCommand){
-    var commandPrefix = "@"+bot.user.username+"#"+bot.user.discreaminator;
+    var commandPrefix = bot.user.toString();
   } else {
     var commandPrefix = config.commandPrefix;
   }
-	if(msg.author.id != bot.user.id && (msg.content.startsWith(commandPrefix))){
+	if (msg.author.id != bot.user.id && msg.content.startsWith(commandPrefix) && msg.content.substring(commandPrefix.length).length > 1) {
     console.log("treating " + msg.content + " from " + msg.author + " as command");
-		var cmdTxt = msg.content.split(" ")[0].substring(commandPrefix.length);
-    var suffix = msg.content.substring(cmdTxt.length+commandPrefix.length+1);//add one for the ! and one for the space
-    if(msg.isMentioned(bot.user)){
-			try {
-				cmdTxt = msg.content.split(" ")[1];
-				suffix = msg.content.substring(bot.user.mention().length+cmdTxt.length+commandPrefix.length+1);
-			} catch(e){ //no command
-				msg.channel.sendMessage("(◕‸◕)?");
-				return;
-			}
+    if (commandPrefix == bot.user) {
+		  var cmdTxt = msg.content.split(" ")[1];
+      var suffix = msg.content.substring(cmdTxt.length+commandPrefix.length+2);
+    } else {
+      var cmdTxt = msg.content.split(" ")[0].substring(commandPrefix.length);
+      var suffix = msg.content.substring(cmdTxt.length+commandPrefix.length+1);//add one for the ! and one for the space
+    }
+    if(cmdTxt.includes(bot.user)){
+			msg.channel.sendMessage("(◕‸◕)?");
+			return;
     }
 		alias = aliases[cmdTxt];
 		if(alias){
@@ -111,7 +133,11 @@ function checkMessage(msg, isEdit) {
 				var info = "";
 				for(var i=0;i<cmds.length;i++) {
 					var cmd = cmds[i];
-					info += "**"+commandPrefix + cmd+"**";
+          if (commandPrefix == bot.user) {
+            info = "**"+commandPrefix+" " + cmd+"**";
+          } else {
+            info = "**"+commandPrefix + cmd+"**";
+          }
 					var usage = commands[cmd].usage;
 					if(usage){
 						info += " " + usage;
@@ -123,7 +149,7 @@ function checkMessage(msg, isEdit) {
 				  if(description){
 						info += "\n\t" + description;
 					}
-				  info += "\n"
+				  info += "\n";
 				}
 				msg.channel.sendMessage(info);
 			} else {
@@ -132,8 +158,12 @@ function checkMessage(msg, isEdit) {
 				  var sortedCommands = Object.keys(commands).sort();
 					for(var i in sortedCommands) {
 						var cmd = sortedCommands[i];
-						var info = "**"+commandPrefix + cmd+"**";
-						var usage = commands[cmd].usage;
+            if (commandPrefix == bot.user) {
+              info = "**"+commandPrefix+" " + cmd+"**";
+            } else {
+              info = "**"+commandPrefix + cmd+"**";
+            }
+            var usage = commands[cmd].usage;
 						if(usage){
 							info += " " + usage;
 						}
@@ -149,7 +179,7 @@ function checkMessage(msg, isEdit) {
 							msg.author.sendMessage(batch);
 							batch = info;
 						} else {
-							batch = newBatch
+							batch = newBatch;
 						}
 					}
 					if(batch.length > 0){
@@ -173,7 +203,7 @@ function checkMessage(msg, isEdit) {
 				msg.channel.sendMessage("You are not allowed to run " + cmdTxt + "!");
 			}
 		} else {
-			msg.channel.sendMessage(cmdTxt + " not recognized as a command!").then((message => message.delete(5000)))
+			msg.channel.sendMessage(cmdTxt + " not recognized as a command!").then((message => message.delete(5000)));
 		}
 	} else {
 		//message isn't a command or is from us
@@ -181,18 +211,31 @@ function checkMessage(msg, isEdit) {
     if(msg.author == bot.user){
       return;
     }
-    if (msg.author != bot.user && msg.isMentioned(bot.user)) {
+    if (msg.author != bot.user && msg.content.startsWith(bot.user) && msg.content.substring(bot.user.toString().length).length <= 1) {
 			if (msg.channel.guild.members.get(msg.author.id).highestRole.name === "leader") {
 				msg.channel.sendMessage("Master " + msg.author + ", you called?");
 			} else if (msg.channel.guild.members.get(msg.author.id).highestRole.name === "noble") {
-				msg.channel.sendMessage("Lord " + msg.author + ", you called?")
+				msg.channel.sendMessage("Lord " + msg.author + ", you called?");
 			} else {
-				msg.channel.sendMessage(msg.author + ", you called?")
+				msg.channel.sendMessage(msg.author + ", you called?");
 			}
-        } else {
-
-				}
-    }
+    } else if (msg.author != bot.user && msg.isMentioned(bot.user)){
+      var hello = ["Hi","Hello","Hey","Sup","Howdy","Yo","Good morning","Morning","Good afternoon","Good evening"];
+      var bye = ["Good bye","Bye","See ya","See you","See you later","Cya"];
+      var bye2 = ["Good night","Night night"];
+      console.log(hello.concat(bye,bye2).length);
+      var salut = startsWithInArray(msg.content,hello.concat(bye,bye2));
+      if (salut) {
+        if (msg.content.substring(salut.length).split(" ")[1] == bot.user && hello.includes(salut)) {
+          msg.channel.sendMessage(hello[Math.floor(Math.random()*2)]+" "+msg.author);
+        } else if (msg.content.substring(salut.length).split(" ")[1] == bot.user && bye.includes(salut)) {
+          msg.channel.sendMessage(bye[Math.floor(Math.random()*2)]+" "+msg.author);
+        } else if (msg.content.substring(salut.length).split(" ")[1] == bot.user && bye2.includes(salut)) {
+          msg.channel.sendMessage(bye2[0]+" "+msg.author);
+        }
+      }
+		}
+  }
 }
 
 bot.on("message", (msg) => checkMessage(msg, false));
