@@ -40,6 +40,7 @@ Permissions.checkPermission = function (user,permission){
 		return allowed;
 	} catch(e){}
 	return false;
+}
 
 bot.on('ready', () => {
   console.log(bot.user.username+" is ready!");
@@ -286,6 +287,7 @@ function addCommand(commandName, commandObject){
     console.log(err);
   }
 }
+
 function commandCount(){
   return Object.keys(commands).length;
 }
