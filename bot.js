@@ -241,7 +241,6 @@ function checkMessage(msg, isEdit) {
       var hello = ["Hi","Hello","Hey","Sup","Howdy","Yo","Good morning","Morning","Good afternoon","Good evening"];
       var bye = ["Good bye","Bye","See ya","See you","See you later","Cya"];
       var bye2 = ["Good night","Night night"];
-      console.log(hello.concat(bye,bye2).length);
       var salut = startsWithInArray(msg.content,hello.concat(bye,bye2));
       if (salut) {
         if (msg.content.substring(salut.length).split(" ")[1] == bot.user && hello.includes(salut)) {
