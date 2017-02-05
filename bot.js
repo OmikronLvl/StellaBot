@@ -45,6 +45,7 @@ Permissions.checkPermission = function (user,permission){
 bot.on('ready', () => {
   console.log(bot.user.username+" is ready!");
   load_plugins();
+  require("./plugins.js").init();
   if(config.guildid){
     bot.guilds.get(config.guildid).defaultChannel.sendMessage("*Hello everyone! "+bot.user.username+" is now online!*")
     .then((message => message.delete(5000)));
