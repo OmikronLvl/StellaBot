@@ -280,7 +280,7 @@ bot.on("presence", function(user,status,gameId) {
 	}catch(e){}
 });
 
-function addCommand(commandName, commandObject){
+exports.addCommand = function(commandName, commandObject){
   try {
     commands[commandName] = commandObject;
   } catch(err){
@@ -288,7 +288,7 @@ function addCommand(commandName, commandObject){
   }
 }
 
-function commandCount(){
+exports.commandCount = function(){
   return Object.keys(commands).length;
 }
 
@@ -304,13 +304,13 @@ function load_plugins(){
     if("commands" in plugin){
       for (var j = 0; j < plugin.commands.length; j++) {
         if (plugin.commands[j] in plugin){
-          addCommand(plugin.commands[j], plugin[plugin.commands[j]]);
+          exports.addCommand(plugin.commands[j], plugin[plugin.commands[j]]);
           commandCnt++;
         }
       }
     }
   }
-  console.log("Loaded "+commandCount()+" chat commands");
+  console.log("Loaded "+exports.commandCount()+" chat commands");
 }
 
 if(Auth.bot_token){
